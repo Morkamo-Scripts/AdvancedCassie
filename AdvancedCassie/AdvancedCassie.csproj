@@ -166,8 +166,13 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Config.cs" />
+        <Compile Include="Handlers\OverrideBaseAnnouncements.cs" />
+        <Content Include="Handlers\OverrideBaseAnnouncements.txt" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Components\" />
     </ItemGroup>
     <!--<ItemGroup>
       <None Include="App.config" />

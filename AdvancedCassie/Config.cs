@@ -1,4 +1,5 @@
-﻿using Exiled.API.Interfaces;
+﻿using AdvancedCassie.Handlers;
+using Exiled.API.Interfaces;
 
 namespace AdvancedCassie
 {
@@ -6,5 +7,7 @@ namespace AdvancedCassie
     {
         public bool IsEnabled { get; set; } = true;
         public bool Debug { get; set; } = false;
+        
+        public OverrideBaseAnnouncements BaseAnnouncements { get; set; } = new();
     }
 }
