@@ -66,6 +66,16 @@ public class OverrideBaseAnnouncements
             Message = "Successfully terminated by scpsubject 2 4 4",
             Subtitle = "успешно уничтожен объектом Scp-244."
         },
+        [nameof(DamageType.Scp018)] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 0 1 8",
+            Subtitle = "успешно уничтожен объектом Scp-018."
+        },
+        [nameof(DamageType.Scp1507)] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 1 5 0 7",
+            Subtitle = "успешно уничтожен объектом Scp-1507."
+        },
         [nameof(DamageType.Decontamination)] = new CassieMessage
         {
             Message = "Lost in decontamination sequence",
