@@ -4,6 +4,7 @@ using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
 using HarmonyLib;
 using events = Exiled.Events.Handlers;
+using lab = LabApi.Events.Handlers;
 
 namespace AdvancedCassie
 {
@@ -46,15 +47,19 @@ namespace AdvancedCassie
 
         private void RegisterEvents()
         {
-            LabApi.Events.Handlers.PlayerEvents.Left += OverrideAnnouncements.PlayerLeft;
-            LabApi.Events.Handlers.ServerEvents.CassieQueuingScpTermination += OverrideAnnouncements.OnAnnouncingScpTermination;
+            lab.ServerEvents.CassieQueuingScpTermination += OverrideAnnouncements.OnAnnouncingScpTermination;
+            events.Player.Left += OverrideAnnouncements.PlayerLeft;
+            events.Map.AnnouncingNtfEntrance += OverrideAnnouncements.OnNtfEntrance;
+            events.Map.AnnouncingChaosEntrance += OverrideAnnouncements.OnChaosEntrance;
             events.Player.Dying += OverrideAnnouncements.OnDying;
         }
 
         private void UnregisterEvents()
         {
-            LabApi.Events.Handlers.PlayerEvents.Left -= OverrideAnnouncements.PlayerLeft;
-            LabApi.Events.Handlers.ServerEvents.CassieQueuingScpTermination -= OverrideAnnouncements.OnAnnouncingScpTermination;
+            lab.ServerEvents.CassieQueuingScpTermination -= OverrideAnnouncements.OnAnnouncingScpTermination;
+            events.Player.Left -= OverrideAnnouncements.PlayerLeft;
+            events.Map.AnnouncingNtfEntrance -= OverrideAnnouncements.OnNtfEntrance;
+            events.Map.AnnouncingChaosEntrance -= OverrideAnnouncements.OnChaosEntrance;
             events.Player.Dying -= OverrideAnnouncements.OnDying;
         }
     }

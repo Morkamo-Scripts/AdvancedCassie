@@ -38,6 +38,10 @@
             <HintPath>..\packages\Lib.Harmony.2.4.2\lib\net48\0Harmony.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="AdvancedCommands">
+          <HintPath>..\..\Libs\AdvancedCommands.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
 
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
             <HintPath>..\packages\ExMod.Exiled.9.11.0\lib\net48\Assembly-CSharp-Publicized.dll</HintPath>
@@ -167,7 +171,6 @@
     <ItemGroup>
         <Compile Include="Config.cs" />
         <Compile Include="Handlers\OverrideBaseAnnouncements.cs" />
-        <Content Include="Handlers\OverrideBaseAnnouncements.txt" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
