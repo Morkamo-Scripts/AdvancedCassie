@@ -1,9 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AdvancedCassie.Components.Extensions;
 using AdvancedCommands.Components.Features;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Exiled.CustomRoles.API;
+using Exiled.CustomRoles.API.Features;
 using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Player;
 using LabApi.Events.Arguments.PlayerEvents;
@@ -11,6 +14,7 @@ using LabApi.Events.Arguments.ServerEvents;
 using MEC;
 using PlayerRoles;
 using Respawning.Announcements;
+using SerpentHands.Events.EventArgs.Round;
 using UnityEngine;
 
 namespace AdvancedCassie.Handlers;
@@ -33,6 +37,15 @@ public class OverrideBaseAnnouncements
         Subtitle = "<color=#6aa84f>Неавторизованная группировка</color> обнаружены на территории комплекса...",
     };
     
+    public CassieMessage SerpentsHandAnnouncement { get; set; } = new CassieMessage()
+    {
+        Message = ".G2 .G3 Unauthorized $STUTTER_0.000_0.13_2 unit were .G5 $STUTTER_0.000_0.13_2 detected at site of " +
+                  "facility .G4 target $STUTTER_0.000_0.13_2 initiated as Serpents Hand . take caution .G3 .G2",
+        Subtitle = "<color=#FFA1D4>Неавторизованная группировка</color> обнаружена на территории комплекса.\n" +
+                   "Субъекты определены как члены враждебной группировки <color=#FF1C73><b>Длань Змея</b></color>.\n" +
+                   "Соблюдайте осторожность и избегайте встречи с субъектами!",
+    };
+    
     public Dictionary<string, string> ScpLevels { get; set; } = new()
     {
         ["Scp-173"] = "[<color=yellow>Euclid</color>]",
@@ -40,8 +53,11 @@ public class OverrideBaseAnnouncements
         ["Scp-3114"] = "[<color=yellow>Euclid</color>]",
         ["Scp-079"] = "[<color=yellow>Euclid</color>]",
         ["Scp-049"] = "[<color=yellow>Euclid</color>]",
+        ["Scp-053"] = "[<color=yellow>Euclid</color>]",
         ["Scp-939"] = "[<color=red>Keter</color>]",
         ["Scp-106"] = "[<color=red>Keter</color>]",
+        ["Scp-191"] = "[<color=green>Safe</color>]",
+        ["Scp0492"] = "[<color=yellow>Euclid</color>]",
     };
     
     public Dictionary<string, CassieMessage> CassieMessages { get; set; } = new()
@@ -49,7 +65,57 @@ public class OverrideBaseAnnouncements
         ["PlayerDisconnected"] = new CassieMessage
         {
             Message = "Successfully terminated by target left",
-            Subtitle = "успешно уничтожен. Игрок покинул сервер."
+            Subtitle = "успешно уничтожен. Игрок покинул сервер." 
+        },
+        ["SerpentHands"] = new CassieMessage
+        {
+            Message = "ContainedSuccessfully ContainmentUnit Serpents Hand",
+            Subtitle = "успешно сдержан <color=#FF1C73>Дланью Змея.</color>"
+        },
+        ["Scp191"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 1 9 1",
+            Subtitle = "успешно уничтожен объектом Scp-191 [<color=green>Safe</color>]."
+        },
+        ["Scp053"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 0 5 3",
+            Subtitle = "успешно уничтожен объектом Scp-053 [<color=yellow>Euclid</color>]."
+        },
+        ["Scp939"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 9 3 9",
+            Subtitle = "успешно уничтожен объектом Scp-939 [<color=red>Keter</color>]."
+        },
+        ["Scp049"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 0 4 9",
+            Subtitle = "успешно уничтожен объектом Scp-049 [<color=yellow>Euclid</color>]."
+        },
+        ["Scp096"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 0 9 6",
+            Subtitle = "успешно уничтожен объектом Scp-096 [<color=yellow>Euclid</color>]."
+        },
+        ["Scp173"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 1 7 3",
+            Subtitle = "успешно уничтожен объектом Scp-173 [<color=yellow>Euclid</color>]."
+        },
+        ["Scp106"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 1 0 6",
+            Subtitle = "успешно уничтожен объектом Scp-106 [<color=red>Keter</color>]."
+        },
+        ["Scp3114"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 3 1 1 4",
+            Subtitle = "успешно уничтожен объектом Scp-3114 [<color=yellow>Euclid</color>]."
+        },
+        ["Scp0492"] = new CassieMessage
+        {
+            Message = "Successfully terminated by scpsubject 0 4 9 2",
+            Subtitle = "успешно уничтожен объектом Scp-049-2 [<color=yellow>Euclid</color>]."
         },
         [nameof(DamageType.Explosion)] = new CassieMessage
         {
@@ -99,27 +165,27 @@ public class OverrideBaseAnnouncements
         [nameof(Team.ClassD)] = new CassieMessage
         {
             Message = "ContainedSuccessfully ContainmentUnit ClassD Personnel",
-            Subtitle = "успешно сдержан персоналом Класса-Д."
+            Subtitle = "успешно сдержан <color=#F58E27>Персоналом Класса-Д.</color>"
         },
         [nameof(Team.Scientists)] = new CassieMessage
         {
             Message = "ContainedSuccessfully ContainmentUnit Science Personnel",
-            Subtitle = "успешно сдержан научным персоналом."
+            Subtitle = "успешно сдержан <color=#FFEF63>Научным Персоналом.</color>"
         },
         [nameof(RoleTypeId.FacilityGuard)] = new CassieMessage
         {
             Message = "ContainedSuccessfully ContainmentUnit Facility Personnel",
-            Subtitle = "успешно сдержан персоналом охраны."
+            Subtitle = "успешно сдержан <color=#FFEF63>Персоналом Охраны.</color>"
         },
         [nameof(Team.FoundationForces)] = new CassieMessage
         {
             Message = "ContainedSuccessfully ContainmentUnit NineTailedFox",
-            Subtitle = "успешно сдержан отрядом Девятихвостой Лисы."
+            Subtitle = "успешно сдержан отрядом <color=#4F87FF>Девятихвостой Лисы.</color>"
         },
         [nameof(Team.ChaosInsurgency)] = new CassieMessage
         {
             Message = "ContainedSuccessfully ContainmentUnit ChaosInsurgency",
-            Subtitle = "успешно сдержан Повстанцами Хаоса."
+            Subtitle = "успешно сдержан <color=#1FA100>Повстанцами Хаоса.</color>"
         }
     };
 
@@ -138,47 +204,102 @@ public class OverrideBaseAnnouncements
         AnnounceScpTermination(leavedRole);
     }
     
+    private string GetScpName(Player player)
+    {
+        if (player == null)
+            return "Unknown";
+
+        if (player.GetCustomRoles().Any(r => r.Id == 7))
+            return "Scp191";
+
+        if (player.GetCustomRoles().Any(r => r.Id == 8))
+            return "Scp053";
+
+        return player.Role.Type.ToString();
+    }
+    
     public void OnDying(DyingEventArgs ev)
     {
+        if (ev.Player == null)
+            return;
+
+        if (ev.Player.Role.Type == RoleTypeId.ZombieFlamingo)
+            return;
+
+        var victimRoleName = GetScpName(ev.Player);
         var userId = ev.Player.UserId;
-        var digits = ev.Player.Role.ToString().Where(char.IsDigit).ToArray();
+
+        var digits = victimRoleName.Where(char.IsDigit).ToArray();
         string spaced = "SCP " + string.Join(" ", digits);
         string dashed = "Scp-" + string.Concat(digits);
+
         ScpLevels.TryGetValue(dashed, out var scpLevel);
-        
-        if (ev.Player.IsScp && ev.Player.Role != RoleTypeId.Scp0492)
+
+        if (ev.Player.Role.Type == RoleTypeId.AlphaFlamingo)
+        {
+            spaced = "SCP 1 5 0 7 Alpha";
+            dashed = "Scp-1507-Альфа";
+            scpLevel = "[<color=yellow>Euclid</color>]";
+        }
+
+        if (!ev.Player.IsNPC
+            && (ev.Player.IsScp || ev.Player.AdvancedCassie().PlayerProperties.IsCustomScp)
+            && ev.Player.Role.Type != RoleTypeId.Scp0492
+            || ev.Player.Role.Type == RoleTypeId.AlphaFlamingo)
         {
             Timing.CallDelayed(1f, () =>
             {
                 if (Player.Get(userId) == null)
                     return;
 
-                if (CassieMessages.TryGetValue(ev.DamageHandler.Type.ToString(),
-                        out CassieMessage damageTypeTranslation))
+                if (ev.Attacker != null)
                 {
-                    LabApi.Features.Wrappers.Cassie.Message(spaced + " " + damageTypeTranslation.Message, true,
-                        true, true, dashed + $" {scpLevel} " + damageTypeTranslation.Subtitle);
+                    var attackerRoleName = GetScpName(ev.Attacker);
+
+                    if (CassieMessages.TryGetValue(attackerRoleName, out var roleTranslation))
+                    {
+                        LabApi.Features.Wrappers.Cassie.Message(
+                            spaced + " " + roleTranslation.Message,
+                            true, true, true,
+                            dashed + $" {scpLevel} " + roleTranslation.Subtitle
+                        );
+                        return;
+                    }
+
+                    if (CassieMessages.TryGetValue(ev.Attacker.Role.Team.ToString(), out var teamTranslation))
+                    {
+                        LabApi.Features.Wrappers.Cassie.Message(
+                            spaced + " " + teamTranslation.Message,
+                            true, true, true,
+                            dashed + $" {scpLevel} " + teamTranslation.Subtitle
+                        );
+                        return;
+                    }
+                }
+
+                if (CassieMessages.TryGetValue(ev.DamageHandler.Type.ToString(), out var damageTranslation)
+                    && ev.DamageHandler.Type != DamageType.Unknown)
+                {
+                    LabApi.Features.Wrappers.Cassie.Message(
+                        spaced + " " + damageTranslation.Message,
+                        true, true, true,
+                        dashed + $" {scpLevel} " + damageTranslation.Subtitle
+                    );
                     return;
                 }
 
-                if (ev.Attacker is not null && CassieMessages.TryGetValue(ev.Attacker.Role.Type.ToString(),
-                        out CassieMessage roleTypeTranslation))
+                if (CassieMessages.TryGetValue(nameof(DamageType.Unknown), out var unknown))
                 {
-                    LabApi.Features.Wrappers.Cassie.Message(spaced + " " + roleTypeTranslation.Message, true, true,
-                        true, dashed + $" {scpLevel} " + roleTypeTranslation.Subtitle);
-                    return;
-                }
-
-                if (ev.Attacker is not null && CassieMessages.TryGetValue(ev.Attacker.Role.Team.ToString(),
-                        out CassieMessage teamTranslation))
-                {
-                    LabApi.Features.Wrappers.Cassie.Message(spaced + " " + teamTranslation.Message, true, true,
-                        true, dashed + $" {scpLevel} " + teamTranslation.Subtitle);
+                    LabApi.Features.Wrappers.Cassie.Message(
+                        spaced + " " + unknown.Message,
+                        true, true, true,
+                        dashed + $" {scpLevel} " + unknown.Subtitle
+                    );
                 }
             });
         }
     }
-
+    
     private void AnnounceScpTermination(RoleTypeId leavedRole)
     {
         CassieMessages.TryGetValue("PlayerDisconnected", out var cassieMessage);
@@ -219,6 +340,14 @@ public class OverrideBaseAnnouncements
     {
         ev.IsAllowed = false;
         LabApi.Features.Wrappers.Cassie.Message(ChaosAnnouncement.Message, true, true, true, ChaosAnnouncement.Subtitle);
+    }
+
+    public void OnSerpentsHandEntrance(SerpentsHandRespawnedEventArgs ev)
+    {
+        LabApi.Features.Wrappers.Cassie.Message(
+            SerpentsHandAnnouncement.Message, 
+            true, true, true,
+            SerpentsHandAnnouncement.Subtitle);
     }
     
     public class CassieMessage

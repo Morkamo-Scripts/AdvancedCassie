@@ -1,4 +1,5 @@
 ﻿using System;
+using AdvancedCassie.Components.Features;
 using AdvancedCassie.Handlers;
 using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
@@ -14,7 +15,7 @@ namespace AdvancedCassie
         public override string Prefix => Name;
         public override string Author => "Morkamo";
         public override Version RequiredExiledVersion => new(9, 1, 0);
-        public override Version Version => new(1, 0, 0);
+        public override Version Version => new(2, 1, 0);
         
         public static Plugin Instance;
         public static Harmony Harmony;
@@ -52,6 +53,9 @@ namespace AdvancedCassie
             events.Map.AnnouncingNtfEntrance += OverrideAnnouncements.OnNtfEntrance;
             events.Map.AnnouncingChaosEntrance += OverrideAnnouncements.OnChaosEntrance;
             events.Player.Dying += OverrideAnnouncements.OnDying;
+            events.Player.Verified += OnVerified;
+            SerpentHands.Events.EventManager.RoundEvents.SerpentsHandRespawned +=
+                OverrideAnnouncements.OnSerpentsHandEntrance;
         }
 
         private void UnregisterEvents()
@@ -61,6 +65,20 @@ namespace AdvancedCassie
             events.Map.AnnouncingNtfEntrance -= OverrideAnnouncements.OnNtfEntrance;
             events.Map.AnnouncingChaosEntrance -= OverrideAnnouncements.OnChaosEntrance;
             events.Player.Dying -= OverrideAnnouncements.OnDying;
+            events.Player.Verified -= OnVerified;
+            SerpentHands.Events.EventManager.RoundEvents.SerpentsHandRespawned -=
+                OverrideAnnouncements.OnSerpentsHandEntrance;
+        }
+        
+        private void OnVerified(VerifiedEventArgs ev)
+        {
+            if (ev.Player.IsNPC)
+                return;
+            
+            if (ev.Player.ReferenceHub.gameObject.GetComponent<AdvancedCassieProperties>() != null)
+                return;
+
+            ev.Player.ReferenceHub.gameObject.AddComponent<AdvancedCassieProperties>();
         }
     }
 }
