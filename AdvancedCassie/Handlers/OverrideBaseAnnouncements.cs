@@ -14,7 +14,9 @@ using LabApi.Events.Arguments.ServerEvents;
 using MEC;
 using PlayerRoles;
 using Respawning.Announcements;
+using Scp191.Components.Extensions;
 using SerpentHands.Events.EventArgs.Round;
+using SerpentHands.Extensions;
 using UnityEngine;
 
 namespace AdvancedCassie.Handlers;
@@ -209,10 +211,16 @@ public class OverrideBaseAnnouncements
         if (player == null)
             return "Unknown";
 
-        if (player.GetCustomRoles().Any(r => r.Id == 7))
+        if (player.GetCustomRoles().Any(r => r.Id == 7) ||
+            player.GetCustomRoles().Any(r => r.Id == 8) ||
+            player.GetCustomRoles().Any(r => r.Id == 9))
+        {
             return "Scp191";
+        }
 
-        if (player.GetCustomRoles().Any(r => r.Id == 8))
+        if (player.GetCustomRoles().Any(r => r.Id == 10) ||
+            player.GetCustomRoles().Any(r => r.Id == 11) ||
+            player.GetCustomRoles().Any(r => r.Id == 12))
             return "Scp053";
 
         return player.Role.Type.ToString();
@@ -223,15 +231,24 @@ public class OverrideBaseAnnouncements
         if (ev.Player == null)
             return;
 
+        if (ev.Player.IsNPC)
+            return;
+
         if (ev.Player.Role.Type == RoleTypeId.ZombieFlamingo)
             return;
 
-        var victimRoleName = GetScpName(ev.Player);
-        var userId = ev.Player.UserId;
+        if (!ev.Player.IsScp && !ev.Player.AdvancedCassie().PlayerProperties.IsCustomScp)
+            return;
 
-        var digits = victimRoleName.Where(char.IsDigit).ToArray();
-        string spaced = "SCP " + string.Join(" ", digits);
-        string dashed = "Scp-" + string.Concat(digits);
+        if (ev.Player.Role.Type == RoleTypeId.Scp0492)
+            return;
+
+        var victimUserId = ev.Player.UserId;
+        var victimScpName = GetScpName(ev.Player);
+
+        var digits = victimScpName.Where(char.IsDigit).ToArray();
+        var spaced = "SCP " + string.Join(" ", digits);
+        var dashed = "Scp-" + string.Concat(digits);
 
         ScpLevels.TryGetValue(dashed, out var scpLevel);
 
@@ -242,62 +259,87 @@ public class OverrideBaseAnnouncements
             scpLevel = "[<color=yellow>Euclid</color>]";
         }
 
-        if (!ev.Player.IsNPC
-            && (ev.Player.IsScp || ev.Player.AdvancedCassie().PlayerProperties.IsCustomScp)
-            && ev.Player.Role.Type != RoleTypeId.Scp0492
-            || ev.Player.Role.Type == RoleTypeId.AlphaFlamingo)
+        Timing.CallDelayed(1f, () =>
         {
-            Timing.CallDelayed(1f, () =>
+            var player = Player.Get(victimUserId);
+            if (player == null || !player.IsDead)
+                return;
+
+
+            if (ev.Attacker != null)
             {
-                if (Player.Get(userId) == null)
-                    return;
+                var serpentProps = ev.Attacker.SerpentHandsProperties();
 
-                if (ev.Attacker != null)
+                if (serpentProps?.SerpentProps?.SerpentRole != null)
                 {
-                    var attackerRoleName = GetScpName(ev.Attacker);
-
-                    if (CassieMessages.TryGetValue(attackerRoleName, out var roleTranslation))
+                    if (CassieMessages.TryGetValue("SerpentHands", out var serpentMessage))
                     {
                         LabApi.Features.Wrappers.Cassie.Message(
-                            spaced + " " + roleTranslation.Message,
+                            spaced + " " + serpentMessage.Message,
                             true, true, true,
-                            dashed + $" {scpLevel} " + roleTranslation.Subtitle
-                        );
-                        return;
-                    }
-
-                    if (CassieMessages.TryGetValue(ev.Attacker.Role.Team.ToString(), out var teamTranslation))
-                    {
-                        LabApi.Features.Wrappers.Cassie.Message(
-                            spaced + " " + teamTranslation.Message,
-                            true, true, true,
-                            dashed + $" {scpLevel} " + teamTranslation.Subtitle
+                            dashed + $" {scpLevel} " + serpentMessage.Subtitle
                         );
                         return;
                     }
                 }
 
-                if (CassieMessages.TryGetValue(ev.DamageHandler.Type.ToString(), out var damageTranslation)
-                    && ev.DamageHandler.Type != DamageType.Unknown)
+                var attackerScpName = GetScpName(ev.Attacker);
+
+                if (CassieMessages.TryGetValue(attackerScpName, out var attackerScpMessage))
                 {
                     LabApi.Features.Wrappers.Cassie.Message(
-                        spaced + " " + damageTranslation.Message,
+                        spaced + " " + attackerScpMessage.Message,
                         true, true, true,
-                        dashed + $" {scpLevel} " + damageTranslation.Subtitle
+                        dashed + $" {scpLevel} " + attackerScpMessage.Subtitle
                     );
                     return;
                 }
 
-                if (CassieMessages.TryGetValue(nameof(DamageType.Unknown), out var unknown))
+                var attackerTeamKey = ev.Attacker.Role.Team.ToString();
+
+                if (CassieMessages.TryGetValue(attackerTeamKey, out var teamMessage))
                 {
                     LabApi.Features.Wrappers.Cassie.Message(
-                        spaced + " " + unknown.Message,
+                        spaced + " " + teamMessage.Message,
                         true, true, true,
-                        dashed + $" {scpLevel} " + unknown.Subtitle
+                        dashed + $" {scpLevel} " + teamMessage.Subtitle
                     );
+                    return;
                 }
-            });
-        }
+
+                if (ev.Attacker.IsScp)
+                {
+                    LabApi.Features.Wrappers.Cassie.Message(
+                        spaced + " Successfully terminated by scpsubject",
+                        true, true, true,
+                        dashed + $" {scpLevel} уничтожен другим SCP."
+                    );
+                    return;
+                }
+            }
+
+            var damageKey = ev.DamageHandler.Type.ToString();
+
+            if (CassieMessages.TryGetValue(damageKey, out var damageMessage)
+                && ev.DamageHandler.Type != DamageType.Unknown)
+            {
+                LabApi.Features.Wrappers.Cassie.Message(
+                    spaced + " " + damageMessage.Message,
+                    true, true, true,
+                    dashed + $" {scpLevel} " + damageMessage.Subtitle
+                );
+                return;
+            }
+
+            if (CassieMessages.TryGetValue(nameof(DamageType.Unknown), out var unknownMessage))
+            {
+                LabApi.Features.Wrappers.Cassie.Message(
+                    spaced + " " + unknownMessage.Message,
+                    true, true, true,
+                    dashed + $" {scpLevel} " + unknownMessage.Subtitle
+                );
+            }
+        });
     }
     
     private void AnnounceScpTermination(RoleTypeId leavedRole)
@@ -319,6 +361,42 @@ public class OverrideBaseAnnouncements
     
     public void PlayerLeft(LeftEventArgs ev)
     {
+        // SCP-191
+        if (ev.Player.GetCustomRoles().Any(pl => pl.Id == 7 || pl.Id == 8 || pl.Id == 9))
+        {
+            CassieMessages.TryGetValue("PlayerDisconnected", out var cassieMessage);
+
+            if (cassieMessage == null)
+                return;
+            
+            string spaced = "SCP 1 9 1";
+            string dashed = "Scp-191";
+            ScpLevels.TryGetValue(dashed, out var scpLevel);
+
+            LabApi.Features.Wrappers.Cassie.Message(spaced + " " + cassieMessage.Message, true, true, true,
+                dashed + $" {scpLevel} " + cassieMessage.Subtitle);
+            
+            return;
+        }
+        
+        // SCP-191
+        if (ev.Player.GetCustomRoles().Any(pl => pl.Id == 10 || pl.Id == 11 || pl.Id == 12))
+        {
+            CassieMessages.TryGetValue("PlayerDisconnected", out var cassieMessage);
+
+            if (cassieMessage == null)
+                return;
+            
+            string spaced = "SCP 0 5 3";
+            string dashed = "Scp-053";
+            ScpLevels.TryGetValue(dashed, out var scpLevel);
+
+            LabApi.Features.Wrappers.Cassie.Message(spaced + " " + cassieMessage.Message, true, true, true,
+                dashed + $" {scpLevel} " + cassieMessage.Subtitle);
+            
+            return;
+        }
+        
         if (ev.Player.IsScp && ev.Player.Role != RoleTypeId.Scp0492)
         {
             CoroutineRunner.Run(RecheckPlayerState(ev.Player.Role));

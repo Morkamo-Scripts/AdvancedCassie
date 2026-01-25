@@ -15,7 +15,7 @@ namespace AdvancedCassie
         public override string Prefix => Name;
         public override string Author => "Morkamo";
         public override Version RequiredExiledVersion => new(9, 1, 0);
-        public override Version Version => new(2, 1, 0);
+        public override Version Version => new(2, 2, 0);
         
         public static Plugin Instance;
         public static Harmony Harmony;

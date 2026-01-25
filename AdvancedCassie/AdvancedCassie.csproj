@@ -138,6 +138,11 @@
             <Private>false</Private>
         </Reference>
 
+        <Reference Include="Scp191">
+          <HintPath>..\..\Libs\Scp191.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+
         <Reference Include="SerpentHands">
           <HintPath>..\..\Libs\SerpentHands.dll</HintPath>
             <Private>false</Private>
